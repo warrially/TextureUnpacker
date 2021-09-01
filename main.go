@@ -20,22 +20,28 @@ import (
 )
 
 type TFile struct {
-	X       int `json:"x"`
-	Y       int `json:"y"`
-	W       int `json:"w"`
-	H       int `json:"h"`
-	OffX    int `json:"offX"`
-	OffY    int `json:"offY"`
-	SourceW int `json:"sourceW"`
-	SourceH int `json:"sourceH"`
+	Name    string `json:"name"`
+	X       int    `json:"x"`
+	Y       int    `json:"y"`
+	W       int    `json:"w"`
+	H       int    `json:"h"`
+	Width   int    `json:"width"`
+	Height  int    `json:"height"`
+	OffX    int    `json:"offX"`
+	OffY    int    `json:"offY"`
+	SourceW int    `json:"sourceW"`
+	SourceH int    `json:"sourceH"`
 }
 
 type TJson struct {
-	File  string           `json:"file"`
-	Frame map[string]TFile `json:"frames"`
+	File       string           `json:"file"`
+	ImagePath  string           `json:"imagePath"`
+	Frame      map[string]TFile `json:"frames"`
+	SubTexture []TFile          `json:"SubTexture"`
 }
 
 func main() {
+	fmt.Println("version 2021年9月1日 11:43:23")
 	files, err := ioutil.ReadDir(`.`)
 	if err != nil {
 		panic(err)
@@ -49,19 +55,8 @@ func main() {
 	}
 }
 
-func main1(strJSON string) {
-
-	// ioutils.Path.
-
-	v := &TJson{}
-
-	ioutils.File.JSON(strJSON, v)
-
-	// fmt.Println(v)
+func egret(v *TJson) {
 	src := v.File
-	if !ioutils.File.Exists(v.File) {
-		return
-	}
 	strExt := ioutils.Path.GetExtension(src)
 	ioutils.Directory.CreateDirectory("output/")
 
@@ -82,6 +77,54 @@ func main1(strJSON string) {
 
 		fmt.Println(color.Green + "      [OK]" + color.Reset)
 
+	}
+
+}
+
+func dragonbone(v *TJson) {
+	src := v.ImagePath
+	strExt := ioutils.Path.GetExtension(src)
+	ioutils.Directory.CreateDirectory("output/")
+
+	for _, v2 := range v.SubTexture {
+		fmt.Println(v2.X, v2.Y, v2.Width, v2.Height)
+		dst := "output/" + v2.Name + strExt
+		fIn, _ := os.Open(src)
+		defer fIn.Close()
+
+		fOut, _ := os.Create(dst)
+		defer fOut.Close()
+
+		fmt.Printf("正在切图 %s%s", v2.Name, color.Red)
+		err := Clip(fIn, fOut, 0, 0, v2.X, v2.Y, v2.X+v2.Width, v2.Y+v2.Height, 100)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(color.Green + "      [OK]" + color.Reset)
+
+	}
+
+}
+
+func main1(strJSON string) {
+
+	// ioutils.Path.
+
+	v := &TJson{}
+
+	ioutils.File.JSON(strJSON, v)
+
+	// fmt.Println(v)
+
+	if ioutils.File.Exists(v.File) {
+		egret(v)
+		return
+	}
+
+	if ioutils.File.Exists(v.ImagePath) {
+		fmt.Println("龙骨切", v.ImagePath)
+		dragonbone(v)
 	}
 
 	/*	w, h, err := Scale(fIn, fOut, 150, 150, 100)
